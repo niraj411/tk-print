@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id           String     @id @default(cuid())
+  wooOrderId   Int        @unique
+  orderNumber  String
+  status       String
+  customerName String
+  customerEmail String?
+  lineItems    String     // JSON string of line items
+  subtotal     Float
+  shippingTotal Float     @default(0)
+  taxTotal     Float      @default(0)
+  orderTotal   Float
+  orderNotes   String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  printJobs    PrintJob[]
+}
+
+model PrintJob {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  jobType    String   // 'receipt' or 'kitchen'
+  status     String   @default("pending") // pending, processing, completed, failed
+  priority   Int      @default(0)
+  attempts   Int      @default(0)
+  lastError  String?
+  queueJobId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([orderId])
+}
+
+model Settings {
+  id           String @id @default("default")
+  printerIp    String @default("192.168.1.100")
+  printerPort  Int    @default(9100)
+  storeName    String @default("My Store")
+  storeAddress String @default("")
+  storePhone   String @default("")
+  storeFooter  String @default("Thank you for your order!")
+  receiptWidth Int    @default(48) // characters per line
+  updatedAt    DateTime @updatedAt
+}
+
+model WebhookLog {
+  id        String   @id @default(cuid())
+  payload   String   // JSON string
+  signature String?
+  verified  Boolean
+  processed Boolean  @default(false)
+  error     String?
+  createdAt DateTime @default(now())
+}

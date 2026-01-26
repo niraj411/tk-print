@@ -1,0 +1,54 @@
+services:
+  tk-print:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: tk-print
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=file:./data/tk-print.db
+      - REDIS_URL=redis://redis:6379
+      # WooCommerce credentials (set via .env or environment)
+      - WOOCOMMERCE_URL=${WOOCOMMERCE_URL}
+      - WOOCOMMERCE_KEY=${WOOCOMMERCE_KEY}
+      - WOOCOMMERCE_SECRET=${WOOCOMMERCE_SECRET}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      # Printer settings (defaults, can be changed in dashboard)
+      - PRINTER_IP=${PRINTER_IP:-192.168.1.100}
+      - PRINTER_PORT=${PRINTER_PORT:-9100}
+      # Store info (defaults, can be changed in dashboard)
+      - STORE_NAME=${STORE_NAME:-My Store}
+      - STORE_ADDRESS=${STORE_ADDRESS:-}
+      - STORE_PHONE=${STORE_PHONE:-}
+      - STORE_FOOTER=${STORE_FOOTER:-Thank you for your order!}
+    volumes:
+      - tk-print-data:/app/packages/api/data
+    depends_on:
+      - redis
+    networks:
+      - tk-print-network
+    # For printer access on local network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  redis:
+    image: redis:7-alpine
+    container_name: tk-print-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - tk-print-network
+    command: redis-server --appendonly yes
+
+volumes:
+  tk-print-data:
+  redis-data:
+
+networks:
+  tk-print-network:
+    driver: bridge

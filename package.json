@@ -1,0 +1,18 @@
+{
+  "name": "tk-print",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WooCommerce Print Service for Star mC-Print3",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "db:generate": "pnpm --filter api db:generate",
+    "db:push": "pnpm --filter api db:push",
+    "db:migrate": "pnpm --filter api db:migrate"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
