@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import type { Router as RouterType } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { testPrinterConnection, printTestReceipt } from '../services/printer.service.js';
+import { testPrinterConnection, printTestReceipt, printTestKitchenTicket } from '../services/printer.service.js';
 
 export const settingsRouter: RouterType = Router();
 
@@ -55,6 +55,28 @@ settingsRouter.post('/test-print', async (_req: Request, res: Response) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Test print failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+settingsRouter.post('/test-kitchen', async (_req: Request, res: Response) => {
+  try {
+    const settings = await prisma.settings.findUnique({
+      where: { id: 'default' },
+    });
+
+    if (!settings) {
+      res.status(500).json({ success: false, error: 'Settings not found' });
+      return;
+    }
+
+    await printTestKitchenTicket(settings);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Test kitchen print failed:', error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
