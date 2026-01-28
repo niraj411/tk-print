@@ -44,8 +44,11 @@ async function fetchProcessingOrders(): Promise<WooCommerceOrder[]> {
     return [];
   }
 
+  // Only fetch orders from the last 2 hours to avoid printing old orders
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+
   // Check for both processing and on-hold orders (common for restaurant/food orders)
-  const endpoint = `${url}/wp-json/wc/v3/orders?status=processing,on-hold&per_page=20`;
+  const endpoint = `${url}/wp-json/wc/v3/orders?status=processing,on-hold&per_page=20&after=${twoHoursAgo}`;
 
   const response = await fetch(endpoint, {
     headers: {

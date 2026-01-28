@@ -5,13 +5,14 @@ services:
       dockerfile: docker/Dockerfile
     container_name: tk-print
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # Use host network so container can reach printer on local network
+    network_mode: host
     environment:
       - NODE_ENV=production
       - PORT=3000
       - DATABASE_URL=file:./data/tk-print.db
-      - REDIS_URL=redis://redis:6379
+      # Redis on localhost since we're using host network
+      - REDIS_URL=redis://127.0.0.1:6379
       # WooCommerce credentials (set via .env or environment)
       - WOOCOMMERCE_URL=${WOOCOMMERCE_URL}
       - WOOCOMMERCE_KEY=${WOOCOMMERCE_KEY}
@@ -29,26 +30,18 @@ services:
       - tk-print-data:/app/packages/api/data
     depends_on:
       - redis
-    networks:
-      - tk-print-network
-    # For printer access on local network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   redis:
     image: redis:7-alpine
     container_name: tk-print-redis
     restart: unless-stopped
+    # Expose redis port for tk-print (which uses host network)
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
-    networks:
-      - tk-print-network
     command: redis-server --appendonly yes
 
 volumes:
   tk-print-data:
   redis-data:
-
-networks:
-  tk-print-network:
-    driver: bridge

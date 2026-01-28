@@ -117,8 +117,11 @@ ordersRouter.post('/sync', async (_req: Request, res: Response) => {
   }
 
   try {
+    // Only fetch orders from the last 2 hours to avoid printing old orders
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+
     // Fetch recent orders with printable statuses
-    const endpoint = `${url}/wp-json/wc/v3/orders?status=processing,on-hold&per_page=50`;
+    const endpoint = `${url}/wp-json/wc/v3/orders?status=processing,on-hold&per_page=50&after=${twoHoursAgo}`;
     const response = await fetch(endpoint, {
       headers: {
         Authorization: 'Basic ' + Buffer.from(`${key}:${secret}`).toString('base64'),
