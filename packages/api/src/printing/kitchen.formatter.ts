@@ -13,53 +13,65 @@ export function formatKitchenTicket(order: Order, settings: Settings): Buffer {
   const lineItems: LineItem[] = JSON.parse(order.lineItems);
   const width = settings.receiptWidth;
 
+  const divider = '='.repeat(width);
+  const thinDivider = '-'.repeat(width);
+
   const parts: Buffer[] = [
     esc.INIT,
 
-    // Large header
+    // === ORDER NUMBER - BIG AND PROMINENT ===
     esc.ALIGN_CENTER,
     esc.BOLD_ON,
     esc.DOUBLE_SIZE_ON,
-    esc.line('** KITCHEN ORDER **'),
-    esc.FEED_LINE,
-
-    // Order number - very prominent
-    esc.line(`#${order.orderNumber}`),
+    esc.line(`ORDER #${order.orderNumber}`),
     esc.NORMAL_SIZE,
     esc.BOLD_OFF,
     esc.FEED_LINE,
 
-    esc.separator('=', width),
-
-    // Time and customer
-    esc.ALIGN_LEFT,
+    // === CUSTOMER INFO ===
+    esc.line(divider),
     esc.BOLD_ON,
-    esc.line(`Time: ${esc.formatTime(order.createdAt)}`),
-    esc.line(`Customer: ${order.customerName}`),
+    esc.DOUBLE_HEIGHT_ON,
+    esc.line(`NAME: ${order.customerName.toUpperCase()}`),
+    esc.NORMAL_SIZE,
     esc.BOLD_OFF,
-    esc.FEED_LINE,
-    esc.separator('-', width),
-    esc.FEED_LINE,
   ];
 
-  // Line items - larger format for kitchen readability
+  // Add phone if available (from email field or could parse from notes)
+  if (order.customerEmail) {
+    parts.push(esc.line(`EMAIL: ${order.customerEmail.toUpperCase()}`));
+  }
+
+  parts.push(
+    esc.line(divider),
+    esc.FEED_LINE,
+  );
+
+  // === ORDER ITEMS ===
+  parts.push(
+    esc.ALIGN_CENTER,
+    esc.BOLD_ON,
+    esc.line('** ORDER ITEMS **'),
+    esc.BOLD_OFF,
+    esc.FEED_LINE,
+    esc.ALIGN_LEFT,
+  );
+
   for (const item of lineItems) {
-    // Quantity and name in larger text
+    // Item line: QTY X PRODUCT NAME
     parts.push(
       esc.BOLD_ON,
       esc.DOUBLE_HEIGHT_ON,
-      esc.line(`${item.quantity}x ${item.name}`),
+      esc.line(`${item.quantity}X ${item.name.toUpperCase()}`),
       esc.NORMAL_SIZE,
       esc.BOLD_OFF,
     );
 
-    // Variations/modifications prominently displayed
+    // Variations/modifications indented
     if (item.variations && item.variations.length > 0) {
       for (const variation of item.variations) {
         parts.push(
-          esc.BOLD_ON,
-          esc.line(`   -> ${variation.key}: ${variation.value}`),
-          esc.BOLD_OFF,
+          esc.line(`   > ${variation.key}: ${variation.value}`),
         );
       }
     }
@@ -67,22 +79,31 @@ export function formatKitchenTicket(order: Order, settings: Settings): Buffer {
     parts.push(esc.FEED_LINE);
   }
 
-  // Order notes - highlighted
+  // === SPECIAL INSTRUCTIONS ===
   if (order.orderNotes) {
     parts.push(
-      esc.separator('*', width),
+      esc.line(divider),
       esc.ALIGN_CENTER,
       esc.BOLD_ON,
       esc.DOUBLE_HEIGHT_ON,
-      esc.line('SPECIAL INSTRUCTIONS'),
+      esc.line('*** SPECIAL INSTRUCTIONS ***'),
       esc.NORMAL_SIZE,
       esc.FEED_LINE,
       esc.ALIGN_LEFT,
-      esc.line(order.orderNotes),
+      esc.line(order.orderNotes.toUpperCase()),
       esc.BOLD_OFF,
-      esc.separator('*', width),
+      esc.line(divider),
     );
   }
+
+  // === TIME ORDERED (at the bottom) ===
+  parts.push(
+    esc.FEED_LINE,
+    esc.line(thinDivider),
+    esc.ALIGN_CENTER,
+    esc.line(`TIME ORDERED: ${esc.formatDateTime(order.createdAt)}`),
+    esc.line(thinDivider),
+  );
 
   parts.push(
     esc.FEED_LINES(4),
