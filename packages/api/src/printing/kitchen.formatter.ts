@@ -11,102 +11,106 @@ interface LineItem {
 
 export function formatKitchenTicket(order: Order, settings: Settings): Buffer {
   const lineItems: LineItem[] = JSON.parse(order.lineItems);
-  const width = settings.receiptWidth;
+  // For 72mm paper, ~42 chars normal, ~21 chars double width
+  const width = 42;
 
   const divider = '='.repeat(width);
   const thinDivider = '-'.repeat(width);
 
   const parts: Buffer[] = [
     esc.INIT,
+    esc.FEED_LINE,
 
-    // === ORDER NUMBER - BIG AND PROMINENT ===
+    // === ORDER NUMBER - VERY BIG ===
     esc.ALIGN_CENTER,
     esc.BOLD_ON,
     esc.DOUBLE_SIZE_ON,
-    esc.line(`ORDER #${order.orderNumber}`),
+    esc.line('ORDER'),
+    esc.line(`#${order.orderNumber}`),
     esc.NORMAL_SIZE,
     esc.BOLD_OFF,
     esc.FEED_LINE,
 
-    // === CUSTOMER INFO ===
+    // === CUSTOMER NAME - BIG ===
     esc.line(divider),
+    esc.FEED_LINE,
     esc.BOLD_ON,
-    esc.DOUBLE_HEIGHT_ON,
-    esc.line(`NAME: ${order.customerName.toUpperCase()}`),
+    esc.DOUBLE_SIZE_ON,
+    esc.line(order.customerName.toUpperCase()),
     esc.NORMAL_SIZE,
     esc.BOLD_OFF,
+    esc.FEED_LINE,
+    esc.line(divider),
+    esc.FEED_LINE,
+    esc.FEED_LINE,
   ];
 
-  // Add phone if available (from email field or could parse from notes)
-  if (order.customerEmail) {
-    parts.push(esc.line(`EMAIL: ${order.customerEmail.toUpperCase()}`));
-  }
-
-  parts.push(
-    esc.line(divider),
-    esc.FEED_LINE,
-  );
-
-  // === ORDER ITEMS ===
-  parts.push(
-    esc.ALIGN_CENTER,
-    esc.BOLD_ON,
-    esc.line('** ORDER ITEMS **'),
-    esc.BOLD_OFF,
-    esc.FEED_LINE,
-    esc.ALIGN_LEFT,
-  );
-
+  // === ORDER ITEMS - LARGE AND CLEAR ===
   for (const item of lineItems) {
-    // Item line: QTY X PRODUCT NAME
+    // Quantity big and bold
     parts.push(
+      esc.ALIGN_CENTER,
       esc.BOLD_ON,
-      esc.DOUBLE_HEIGHT_ON,
-      esc.line(`${item.quantity}X ${item.name.toUpperCase()}`),
+      esc.DOUBLE_SIZE_ON,
+      esc.line(`${item.quantity}x`),
+      esc.FEED_LINE,
+      // Item name
+      esc.line(item.name.toUpperCase()),
       esc.NORMAL_SIZE,
       esc.BOLD_OFF,
     );
 
-    // Variations/modifications indented
+    // Variations/modifications
     if (item.variations && item.variations.length > 0) {
+      parts.push(esc.FEED_LINE);
       for (const variation of item.variations) {
         parts.push(
-          esc.line(`   > ${variation.key}: ${variation.value}`),
+          esc.BOLD_ON,
+          esc.DOUBLE_HEIGHT_ON,
+          esc.line(`> ${variation.value.toUpperCase()}`),
+          esc.NORMAL_SIZE,
+          esc.BOLD_OFF,
         );
       }
     }
 
-    parts.push(esc.FEED_LINE);
-  }
-
-  // === SPECIAL INSTRUCTIONS ===
-  if (order.orderNotes) {
     parts.push(
-      esc.line(divider),
-      esc.ALIGN_CENTER,
-      esc.BOLD_ON,
-      esc.DOUBLE_HEIGHT_ON,
-      esc.line('*** SPECIAL INSTRUCTIONS ***'),
-      esc.NORMAL_SIZE,
       esc.FEED_LINE,
-      esc.ALIGN_LEFT,
-      esc.line(order.orderNotes.toUpperCase()),
-      esc.BOLD_OFF,
-      esc.line(divider),
+      esc.line(thinDivider),
+      esc.FEED_LINE,
     );
   }
 
-  // === TIME ORDERED (at the bottom) ===
+  // === SPECIAL INSTRUCTIONS - VERY PROMINENT ===
+  if (order.orderNotes) {
+    parts.push(
+      esc.FEED_LINE,
+      esc.ALIGN_CENTER,
+      esc.BOLD_ON,
+      esc.DOUBLE_SIZE_ON,
+      esc.line('** NOTES **'),
+      esc.FEED_LINE,
+      esc.line(order.orderNotes.toUpperCase()),
+      esc.NORMAL_SIZE,
+      esc.BOLD_OFF,
+      esc.FEED_LINE,
+    );
+  }
+
+  // === TIME ORDERED ===
   parts.push(
     esc.FEED_LINE,
-    esc.line(thinDivider),
+    esc.line(divider),
     esc.ALIGN_CENTER,
-    esc.line(`TIME ORDERED: ${esc.formatDateTime(order.createdAt)}`),
-    esc.line(thinDivider),
+    esc.BOLD_ON,
+    esc.line(`ORDERED: ${esc.formatDateTime(order.createdAt)}`),
+    esc.BOLD_OFF,
+    esc.line(divider),
   );
 
+  // Feed and cut
   parts.push(
-    esc.FEED_LINES(4),
+    esc.FEED_LINES(5),
     esc.CUT_PAPER,
   );
 

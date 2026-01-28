@@ -23,9 +23,13 @@ export const ALIGN_LEFT = Buffer.from([ESC, 0x61, 0x00]);
 export const ALIGN_CENTER = Buffer.from([ESC, 0x61, 0x01]);
 export const ALIGN_RIGHT = Buffer.from([ESC, 0x61, 0x02]);
 
-// Paper cutting
-export const CUT_PAPER = Buffer.from([GS, 0x56, 0x41, 0x03]);
-export const PARTIAL_CUT = Buffer.from([GS, 0x56, 0x42, 0x00]);
+// Paper cutting - Star mC-Print3 compatible
+// Full cut with feed
+export const CUT_PAPER = Buffer.from([GS, 0x56, 0x00]);
+// Partial cut
+export const PARTIAL_CUT = Buffer.from([GS, 0x56, 0x01]);
+// Alternative full cut command (some Star models)
+export const CUT_FULL_ALT = Buffer.from([ESC, 0x64, 0x02]);
 
 // Line feed
 export const FEED_LINE = Buffer.from([LF]);
