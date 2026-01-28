@@ -53,8 +53,9 @@ webhookRouter.post('/woocommerce', async (req: Request, res: Response) => {
     // Parse the payload
     const data = JSON.parse(payload.toString('utf-8'));
 
-    // Check if this is an order update to "processing" status
-    if (data.status === 'processing') {
+    // Check if this is an order ready to be printed (processing or on-hold)
+    const printableStatuses = ['processing', 'on-hold'];
+    if (printableStatuses.includes(data.status)) {
       await processWooCommerceOrder(data);
 
       await prisma.webhookLog.update({

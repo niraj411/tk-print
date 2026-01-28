@@ -44,7 +44,8 @@ async function fetchProcessingOrders(): Promise<WooCommerceOrder[]> {
     return [];
   }
 
-  const endpoint = `${url}/wp-json/wc/v3/orders?status=processing&per_page=20`;
+  // Check for both processing and on-hold orders (common for restaurant/food orders)
+  const endpoint = `${url}/wp-json/wc/v3/orders?status=processing,on-hold&per_page=20`;
 
   const response = await fetch(endpoint, {
     headers: {
